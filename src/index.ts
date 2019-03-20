@@ -108,7 +108,7 @@ function connect (connectionConfig: pg.ClientConfig | undefined, options: Option
   }
 }
 
-function forwardDBNotificationEvents (dbClient: pg.Client, emitter: TypedEventEmitter<PgListenEvents>, raw: boolean = false) {
+function forwardDBNotificationEvents (dbClient: pg.Client, emitter: TypedEventEmitter<PgListenEvents>, raw?: boolean) {
   const onNotification = (notification: PgNotification) => {
     notificationLogger(`Received PostgreSQL notification on "${notification.channel}":`, notification.payload)
 
