@@ -46,6 +46,11 @@ export interface Options {
   paranoidChecking?: number | false
 
   /**
+   * Treat payloads as plain strings instead of JSON. Defaults to false.
+   */
+  raw?: boolean
+  
+  /**
    * How much time to wait between reconnection attempts (if failed).
    * Defaults to 500 ms.
    */
@@ -109,7 +114,7 @@ function forwardDBNotificationEvents (dbClient: pg.Client, emitter: TypedEventEm
 
     let payload
     try {
-      payload = notification.payload ? JSON.parse(notification.payload) : notification.payload
+      payload = notification.payload && !options.raw ? JSON.parse(notification.payload) : notification.payload
     } catch (error) {
       error.message = `Error parsing PostgreSQL notification payload: ${error.message}`
       return emitter.emit("error", error)
@@ -254,7 +259,7 @@ function createPostgresSubscriber (connectionConfig?: pg.ClientConfig, options: 
     },
     notify (channelName: string, payload: any) {
       notificationLogger(`Sending PostgreSQL notification to "${channelName}":`, payload)
-      return dbClient.query(`NOTIFY ${format.ident(channelName)}, ${format.literal(JSON.stringify(payload))}`)
+      return dbClient.query(`NOTIFY ${format.ident(channelName)}, ${format.literal(options.raw ? payload : JSON.stringify(payload))}`)
     },
     unlisten (channelName: string) {
       if (subscribedChannels.indexOf(channelName) === -1) {
