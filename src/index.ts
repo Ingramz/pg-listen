@@ -108,13 +108,13 @@ function connect (connectionConfig: pg.ClientConfig | undefined, options: Option
   }
 }
 
-function forwardDBNotificationEvents (dbClient: pg.Client, emitter: TypedEventEmitter<PgListenEvents>) {
+function forwardDBNotificationEvents (dbClient: pg.Client, emitter: TypedEventEmitter<PgListenEvents>, raw: boolean) {
   const onNotification = (notification: PgNotification) => {
     notificationLogger(`Received PostgreSQL notification on "${notification.channel}":`, notification.payload)
 
     let payload
     try {
-      payload = notification.payload && !options.raw ? JSON.parse(notification.payload) : notification.payload
+      payload = notification.payload && !raw ? JSON.parse(notification.payload) : notification.payload
     } catch (error) {
       error.message = `Error parsing PostgreSQL notification payload: ${error.message}`
       return emitter.emit("error", error)
@@ -189,7 +189,7 @@ function createPostgresSubscriber (connectionConfig?: pg.ClientConfig, options: 
 
   const initialize = async (client: pg.Client) => {
     // Wire the DB client events to our exposed emitter's events
-    cancelEventForwarding = forwardDBNotificationEvents(client, emitter)
+    cancelEventForwarding = forwardDBNotificationEvents(client, emitter, options.raw)
 
     dbClient.on("error", (error: any) => {
       connectionLogger("DB Client error:", error)
